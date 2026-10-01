@@ -94,7 +94,7 @@ function postMeta(post, { views = true } = {}) {
 export function postCard(ctx, post, i = 0, opts = {}) {
   const vt = `view-transition-name: t-${post.n}`;
   // Generated artwork sits under the post's own image, so a broken image falls back to it.
-  const art = `<div class="card-art card-art-gen" aria-hidden="true" style="--h:${(post.n * 47) % 360}"><span>${esc(post.title.slice(0, 1))}</span>${post.image ? `<img src="${esc(post.image)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</div>`;
+  const art = `<div class="card-art card-art-gen" aria-hidden="true" style="--h:${(post.n * 47) % 360}"><span>${esc((post.title.match(/[\p{L}\p{N}]/u) || [post.title[0] || ''])[0])}</span>${post.image ? `<img src="${esc(post.image)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</div>`;
   return `<article class="card glass tilt reveal${opts.big ? ' card-big' : ''}${opts.wide ? ' card-wide' : ''}" style="--i:${i % 12}">
     <a class="card-link" href="${L(ctx, postPath(post))}" aria-label="${esc(post.title)}"></a>
     ${art}
@@ -249,6 +249,10 @@ export function tocHTML(toc) {
   return `<ol class="toc-list">${items.map(t => `<li class="toc-l${t.level - top}"><a href="#${esc(t.id)}" data-toc="${esc(t.id)}">${esc(t.text)}</a></li>`).join('')}</ol>`;
 }
 
+// Many descriptions are the article's first paragraph; don't print it twice.
+const squash = s => String(s).replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/gi, '').replace(/[\s"'“”‘’，。,.!！?？:：;；…—-]+/g, '');
+const opensWith = (html, text) => { const t = squash(text).slice(0, 24); const p = (String(html).match(/<p>([\s\S]*?)<\/p>/) || [])[1] || ''; return t.length > 6 && squash(p).startsWith(t); };
+
 export function postView(site, post, content, ctx, now = new Date()) {
   const idx = site.posts.indexOf(post);
   const newer = idx > 0 ? site.posts[idx - 1] : null;
@@ -269,7 +273,7 @@ export function postView(site, post, content, ctx, now = new Date()) {
           ${post.tags.map(t => tagChip(ctx, t)).join('')}
         </div>
         <h1 class="article-title"><span style="view-transition-name: t-${post.n}">${esc(post.title)}</span></h1>
-        ${post.description ? `<p class="article-lede">${esc(post.description)}</p>` : ''}
+        ${post.description && !opensWith(content.html, post.description) ? `<p class="article-lede">${esc(post.description)}</p>` : ''}
         <div class="article-meta">
           ${postMeta(post)}
           <span>${icon('book')}${post.words.toLocaleString('zh-CN')} 字</span>

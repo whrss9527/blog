@@ -6,7 +6,10 @@
 const PREVIEW = Boolean(window.__PREVIEW__);
 const BUILD = document.documentElement.dataset.build || 'dev';
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-const ctx = { link: p => (PREVIEW ? `#${p}` : p), asset: p => (PREVIEW ? window.__ASSETS__?.[p] || p : p) };
+// The site may live below its host (a GitHub Pages project site before the domain moves).
+const BASE = PREVIEW ? '' : document.documentElement.dataset.base || '';
+const ctx = { link: p => (PREVIEW ? `#${p}` : BASE + p), asset: p => (PREVIEW ? window.__ASSETS__?.[p] || p : BASE + p) };
+const pathOf = url => (BASE && url.pathname.startsWith(BASE) ? url.pathname.slice(BASE.length) || '/' : url.pathname);
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 
@@ -24,7 +27,7 @@ async function fetchJSON(url) {
 let sitePromise = null;
 function loadSite() {
   if (site) return Promise.resolve(site);
-  sitePromise ||= fetchJSON(`/data/site.json?v=${BUILD}`).then(s => (site = s));
+  sitePromise ||= fetchJSON(`${BASE}/data/site.json?v=${BUILD}`).then(s => (site = s));
   return sitePromise;
 }
 function loadContent(kind, id) {
@@ -32,7 +35,7 @@ function loadContent(kind, id) {
   if (contentCache.has(key)) return contentCache.get(key);
   let p;
   if (window.__CONTENT__) p = Promise.resolve(window.__CONTENT__[key] || null);
-  else p = fetchJSON(`/data/${kind}/${encodeURIComponent(id)}.json?v=${BUILD}`).catch(() => null);
+  else p = fetchJSON(`${BASE}/data/${kind}/${encodeURIComponent(id)}.json?v=${BUILD}`).catch(() => null);
   contentCache.set(key, p);
   p.then(v => { if (!v) contentCache.delete(key); });
   return p;
@@ -41,7 +44,7 @@ let fullTextPromise = null;
 function loadFullText() {
   if (fullText) return Promise.resolve(fullText);
   if (window.__SEARCH__) return Promise.resolve((fullText = window.__SEARCH__));
-  fullTextPromise ||= fetchJSON(`/data/search.json?v=${BUILD}`).then(v => (fullText = v)).catch(() => null);
+  fullTextPromise ||= fetchJSON(`${BASE}/data/search.json?v=${BUILD}`).then(v => (fullText = v)).catch(() => null);
   return fullTextPromise;
 }
 
@@ -67,7 +70,7 @@ function setMeta(view, url) {
   set('meta[property="og:title"]', 'content', view.title);
   set('meta[property="og:description"]', 'content', view.description);
   if (!PREVIEW && site) {
-    const canonical = site.config.host + url.pathname + (url.pathname === '/' ? '' : '');
+    const canonical = site.config.host + pathOf(url);
     set('link[rel="canonical"]', 'href', canonical);
     set('meta[property="og:url"]', 'content', canonical);
   }
@@ -78,12 +81,12 @@ function setMeta(view, url) {
 let navToken = 0;
 async function navigate(href, { replace = false, restore = null, fromPop = false } = {}) {
   const url = toURL(href);
-  const route = matchRoute(url.pathname);
+  const route = matchRoute(pathOf(url));
   const token = ++navToken;
 
   if (route.name === 'random') {
     await loadSite();
-    const pool = site.posts.filter(p => keyOf(currentURL()) !== postPath(p));
+    const pool = site.posts.filter(p => pathOf(currentURL()) !== postPath(p));
     const pick = pool[Math.floor(Math.random() * pool.length)];
     return navigate(ctx.link(postPath(pick)), { replace });
   }
@@ -97,7 +100,7 @@ async function navigate(href, { replace = false, restore = null, fromPop = false
       const post = findPost(site, route.slug);
       if (post) content = await loadContent('posts', post.slug);
       if (post && !content && !PREVIEW) { location.href = url.href; return; } // offline or missing: let the browser try
-      if (post && post.slug !== route.slug) { url.pathname = postPath(post); replace = true; }
+      if (post && post.slug !== route.slug) { url.pathname = BASE + postPath(post); replace = true; }
     } else if (route.name === 'page') {
       content = await loadContent('pages', route.id);
     }
@@ -111,8 +114,7 @@ async function navigate(href, { replace = false, restore = null, fromPop = false
   if (!fromPop) {
     if (!PREVIEW) history.replaceState({ ...(history.state || {}), y: scrollY }, '');
     const target = PREVIEW ? `#${url.pathname}${url.search}` : url.pathname + url.search + url.hash;
-    if (replace) history.replaceState({ y: 0 }, '', target);
-    else history.pushState({ y: 0 }, '', target);
+    setHistory(target, replace);
   }
 
   const view = renderRoute(site, route, ctx, { query: url.searchParams, content, fullText });
@@ -132,6 +134,20 @@ async function navigate(href, { replace = false, restore = null, fromPop = false
   track(url);
 }
 
+// A sandboxed frame (the one-file preview inside another page) may refuse
+// pushState; then the preview moves the hash itself and ignores the echo.
+let ignoreHash = null;
+function setHistory(target, replace) {
+  try {
+    if (replace) history.replaceState({ y: 0 }, '', target);
+    else history.pushState({ y: 0 }, '', target);
+  } catch {
+    if (!PREVIEW) { location.href = target; return; }
+    ignoreHash = target;
+    if (replace) location.replace(target); else location.hash = target.slice(1);
+  }
+}
+
 function scrollToHash(hash, instant = false) {
   const id = decodeURIComponent(hash.replace(/^#/, ''));
   const el = id && document.getElementById(id);
@@ -145,9 +161,10 @@ function isInternal(a) {
   if (PREVIEW) return href.startsWith('#/');
   if (href.startsWith('#')) return false;
   const url = new URL(href, location.href);
-  if (url.origin !== location.origin) return false;
-  if (/\.(xml|json|png|jpe?g|gif|webp|svg|ico|txt|webmanifest|zip)$/i.test(url.pathname)) return false;
-  if (/^\/(intro|feed|covers|assets|data)(\/|$)/.test(url.pathname)) return false;
+  if (url.origin !== location.origin || (BASE && !url.pathname.startsWith(`${BASE}/`) && url.pathname !== BASE)) return false;
+  const p = pathOf(url);
+  if (/\.(xml|json|png|jpe?g|gif|webp|svg|ico|txt|webmanifest|zip)$/i.test(p)) return false;
+  if (/^\/(intro|feed|covers|assets|data)(\/|$)/.test(p)) return false;
   return true;
 }
 
@@ -159,7 +176,7 @@ document.addEventListener('click', e => {
   if (href.startsWith('#') && !href.startsWith('#/')) { // in-page anchors
     e.preventDefault();
     scrollToHash(href);
-    if (!PREVIEW) history.replaceState(history.state, '', href);
+    if (!PREVIEW) try { history.replaceState(history.state, '', href); } catch {}
     closeToc();
     return;
   }
@@ -173,13 +190,16 @@ addEventListener('popstate', e => {
   if (PREVIEW) return; // the preview follows hashchange instead
   navigate(location.href, { fromPop: true, restore: e.state?.y ?? 0 });
 });
-if (PREVIEW) addEventListener('hashchange', () => { if (location.hash.startsWith('#/') && keyOf(currentURL()) !== currentKey) navigate(location.hash, { fromPop: true }); });
+if (PREVIEW) addEventListener('hashchange', () => {
+  if (ignoreHash && location.hash === ignoreHash) { ignoreHash = null; return; }
+  if (location.hash.startsWith('#/') && keyOf(currentURL()) !== currentKey) navigate(location.hash, { fromPop: true });
+});
 
 // Prefetch the body of a post when the pointer settles on a link to it.
 document.addEventListener('pointerover', e => {
   const a = e.target.closest?.('a[href]');
   if (!a || !site || !isInternal(a)) return;
-  const route = matchRoute(toURL(a.getAttribute('href')).pathname);
+  const route = matchRoute(pathOf(toURL(a.getAttribute('href'))));
   if (route.name === 'post') { const p = findPost(site, route.slug); if (p) loadContent('posts', p.slug); }
 }, { passive: true });
 
@@ -201,7 +221,7 @@ function afterRender(view, url) {
 }
 
 function markNav(url) {
-  const path = url.pathname;
+  const path = pathOf(url);
   $$('[data-nav] a').forEach(a => {
     const p = a.dataset.path;
     const active = p === '/' ? path === '/' : path === p || path.startsWith(`${p}/`);
@@ -246,7 +266,7 @@ function setupReveal() {
   if (!('IntersectionObserver' in window) || reduceMotion()) { els.forEach(el => el.classList.add('in')); return; }
   const io = new IntersectionObserver(entries => {
     for (const en of entries) if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
-  }, { rootMargin: '0px 0px -6% 0px', threshold: 0.04 });
+  }, { rootMargin: '0px 0px -40px 0px', threshold: 0 });
   els.forEach(el => io.observe(el));
   observers.push(io);
 }
@@ -624,11 +644,11 @@ function track(url) {
 
 // ---------- boot ----------
 async function boot() {
-  history.scrollRestoration = 'manual';
+  try { history.scrollRestoration = 'manual'; } catch {}
   applyTheme(storedTheme());
   const url = currentURL();
   currentKey = keyOf(url);
-  const route = matchRoute(url.pathname);
+  const route = matchRoute(pathOf(url));
   const main = $('#main');
   // Pages the host could not pre-render for this exact address: the preview
   // shell, filtered home pages, the 404 page (old addresses), random.
@@ -644,7 +664,7 @@ async function boot() {
   }
   loadSite().then(() => { setupAnalytics(); }).catch(() => {});
   if (!PREVIEW && 'serviceWorker' in navigator && !LOCAL.test(location.hostname)) {
-    addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+    addEventListener('load', () => navigator.serviceWorker.register(`${BASE}/sw.js`, { scope: `${BASE}/` }).catch(() => {}));
   }
   document.documentElement.classList.add('ready');
 }
