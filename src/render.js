@@ -91,10 +91,14 @@ function postMeta(post, { views = true } = {}) {
     ${views && post.views ? `<span title="阅读 ${post.views} 次（静态版之前的统计）">${icon('eye')}${humanCount(post.views)}</span>` : ''}`;
 }
 
+// Hues for generated artwork: neighbours on the wheel (violet, blue, cyan, teal, pink),
+// so each card glows in one family instead of clashing.
+const ART_HUES = [252, 205, 318, 228, 182, 280, 340, 196, 265];
+
 export function postCard(ctx, post, i = 0, opts = {}) {
   const vt = `view-transition-name: t-${post.n}`;
   // Generated artwork sits under the post's own image, so a broken image falls back to it.
-  const art = `<div class="card-art card-art-gen" aria-hidden="true" style="--h:${(post.n * 47) % 360}"><span>${esc((post.title.match(/[\p{L}\p{N}]/u) || [post.title[0] || ''])[0])}</span>${post.image ? `<img src="${esc(post.image)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</div>`;
+  const art = `<div class="card-art card-art-gen" aria-hidden="true" style="--h:${ART_HUES[post.n % ART_HUES.length]}"><span>${esc((post.title.match(/[\p{L}\p{N}]/u) || [post.title[0] || ''])[0])}</span>${post.image ? `<img src="${esc(post.image)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</div>`;
   return `<article class="card glass tilt reveal${opts.big ? ' card-big' : ''}${opts.wide ? ' card-wide' : ''}" style="--i:${i % 12}">
     <a class="card-link" href="${L(ctx, postPath(post))}" aria-label="${esc(post.title)}"></a>
     ${art}

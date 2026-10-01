@@ -229,11 +229,15 @@ main { display: block; padding-top: 104px; min-height: 70vh; }
 @media (max-width: 880px) {
   .nav { padding-left: 10px; }
   .nav-menu { display: inline-grid; }
+  /* opaque: inside the nav's own glass a second backdrop-filter has nothing to blur */
   .nav-links { position: absolute; top: calc(100% + 10px); right: 0; left: 0; margin: 0; flex-direction: column; gap: 4px; padding: 10px; border-radius: 22px;
-    background: var(--glass-strong); -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
+    background: var(--glass-solid);
     box-shadow: inset 0 1px 0 var(--rim), 0 24px 50px -24px var(--shadow);
     opacity: 0; translate: 0 -8px; scale: 0.98; pointer-events: none; transition: opacity 0.25s, translate 0.35s var(--spring), scale 0.35s var(--spring); }
   .nav.menu-open .nav-links { opacity: 1; translate: 0 0; scale: 1; pointer-events: auto; }
+  /* while the menu hangs below the bar, the bar drops its own backdrop-filter: Chromium mis-composites
+     children that overflow an element with one */
+  .nav.menu-open { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
   .nav-links a { padding: 10px 14px; font-size: 1rem; }
   .nav-links a.is-active { background: var(--lens); }
   .nav-lens { display: none; }
@@ -347,17 +351,17 @@ main { display: block; padding-top: 104px; min-height: 70vh; }
 .card:hover .card-art img { transform: scale(1.06); }
 .card-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(10, 12, 24, 0.18)); }
 .card-art-gen {
-  --l1: 72%; --l2: 70%; --l3: 68%; --l4: 90%;
+  --sat: 90%; --a: 0.85; --l1: 72%; --l2: 70%; --l3: 68%; --base-sat: 60%; --l4: 90%;
   display: grid; place-items: center;
   background:
-    radial-gradient(circle at 18% 22%, hsl(var(--h) 90% var(--l1) / 0.85), transparent 46%),
-    radial-gradient(circle at 82% 30%, hsl(calc(var(--h) + 70) 90% var(--l2) / 0.75), transparent 48%),
-    radial-gradient(circle at 60% 90%, hsl(calc(var(--h) + 150) 85% var(--l3) / 0.75), transparent 50%),
-    hsl(calc(var(--h) + 30) 60% var(--l4));
+    radial-gradient(circle at 18% 22%, hsl(var(--h) var(--sat) var(--l1) / var(--a)), transparent 46%),
+    radial-gradient(circle at 82% 30%, hsl(calc(var(--h) + 38) var(--sat) var(--l2) / var(--a)), transparent 48%),
+    radial-gradient(circle at 60% 90%, hsl(calc(var(--h) - 34) var(--sat) var(--l3) / var(--a)), transparent 50%),
+    hsl(calc(var(--h) + 10) var(--base-sat) var(--l4));
 }
-:root[data-theme="dark"] .card-art-gen { --l1: 40%; --l2: 36%; --l3: 34%; --l4: 16%; filter: saturate(0.75); }
-:root[data-theme="dark"] .card-art-gen img { filter: saturate(1.33); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .card-art-gen { --l1: 40%; --l2: 36%; --l3: 34%; --l4: 16%; filter: saturate(0.75); } :root:not([data-theme="light"]) .card-art-gen img { filter: saturate(1.33); } }
+/* in the dark the colours glow out of a deep base instead of mixing into mud */
+:root[data-theme="dark"] .card-art-gen { --sat: 72%; --a: 0.55; --l1: 58%; --l2: 55%; --l3: 52%; --base-sat: 32%; --l4: 13%; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .card-art-gen { --sat: 72%; --a: 0.55; --l1: 58%; --l2: 55%; --l3: 52%; --base-sat: 32%; --l4: 13%; } }
 .card-art-gen span { font-size: 4.4rem; font-weight: 800; color: rgba(255, 255, 255, 0.78); text-shadow: 0 6px 30px rgba(0, 0, 0, 0.12); transition: transform 0.9s var(--ease); }
 .card:hover .card-art-gen span { transform: scale(1.12) rotate(-6deg); }
 .card-body { display: flex; flex-direction: column; gap: 8px; padding: 16px 20px 18px; flex: 1; }

@@ -79,7 +79,7 @@ function setMeta(view, url) {
 
 // ---------- navigation ----------
 let navToken = 0;
-async function navigate(href, { replace = false, restore = null, fromPop = false } = {}) {
+async function navigate(href, { replace = false, restore = null, fromPop = false, instant = false } = {}) {
   const url = toURL(href);
   const route = matchRoute(pathOf(url));
   const token = ++navToken;
@@ -88,7 +88,7 @@ async function navigate(href, { replace = false, restore = null, fromPop = false
     await loadSite();
     const pool = site.posts.filter(p => pathOf(currentURL()) !== postPath(p));
     const pick = pool[Math.floor(Math.random() * pool.length)];
-    return navigate(ctx.link(postPath(pick)), { replace });
+    return navigate(ctx.link(postPath(pick)), { replace, instant });
   }
   const sameDoc = keyOf(url) === currentKey;
   if (sameDoc && url.hash && !fromPop) { scrollToHash(url.hash); if (!PREVIEW) history.pushState({ y: 0 }, '', url); return; }
@@ -127,7 +127,7 @@ async function navigate(href, { replace = false, restore = null, fromPop = false
     else scrollTo(0, 0);
     afterRender(view, url);
   };
-  if (document.startViewTransition && !reduceMotion()) {
+  if (document.startViewTransition && !reduceMotion() && !instant) {
     document.documentElement.dataset.nav = fromPop ? 'back' : 'forward';
     document.startViewTransition(swap).finished.finally(() => delete document.documentElement.dataset.nav);
   } else swap();
@@ -657,7 +657,7 @@ async function boot() {
     || (route.name === 'reading' && url.searchParams.get('status'))
     || document.body.classList.contains('is-404') || route.name === 'random';
   if (needsRender) {
-    await navigate(PREVIEW ? `#${url.pathname}${url.search}` : url.href, { replace: true });
+    await navigate(PREVIEW ? `#${url.pathname}${url.search}` : url.href, { replace: true, instant: true });
   } else {
     afterRender({}, url);
     if (url.hash) requestAnimationFrame(() => scrollToHash(url.hash, true));
