@@ -1,0 +1,26 @@
+{
+  "name": "了迹奇有没",
+  "host": "https://blog.whrss.com",
+  "description": "互联网码农的博客：技术、折腾、生活和思考。",
+  "author": "了迹奇有没",
+  "email": "whrss9527@gmail.com",
+  "github": "https://github.com/whrss9527",
+  "website": "https://whrss.com",
+  "lang": "zh-CN",
+  "dataDir": "blog-data",
+  "analytics": "G-SXYGHHQ02D",
+  "giscus": {
+    "repo": "whrss9527/blog-comments",
+    "repoId": "R_kgDOI5Sj3w",
+    "categoryId": "DIC_kwDOI5Sj384CT-Us",
+    "mapping": "pathname"
+  },
+  "nav": [
+    { "href": "/", "label": "首页" },
+    { "href": "/archive", "label": "归档" },
+    { "href": "/tags", "label": "标签" },
+    { "href": "/reading", "label": "阅读" },
+    { "href": "/stats", "label": "统计" },
+    { "href": "/pages/about", "label": "关于" }
+  ]
+}

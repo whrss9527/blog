@@ -1,0 +1,22 @@
+{
+  "name": "goblog",
+  "version": "2.0.0",
+  "private": true,
+  "description": "了迹奇有没的博客：从 blog-data 生成的纯静态页面应用",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/build.mjs --preview",
+    "serve": "node scripts/serve.mjs",
+    "dev": "node scripts/build.mjs && node scripts/serve.mjs",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "highlight.js": "^11.12.0",
+    "js-yaml": "^4.3.2",
+    "marked": "^15.0.12"
+  }
+}
