@@ -203,6 +203,11 @@ document.addEventListener('pointerover', e => {
   if (route.name === 'post') { const p = findPost(site, route.slug); if (p) loadContent('posts', p.slug); }
 }, { passive: true });
 
+// A card image that fails to load (moved, blocked) leaves the generated artwork under it.
+document.addEventListener('error', e => {
+  if (e.target.tagName === 'IMG' && e.target.closest('.card-art')) e.target.remove();
+}, true);
+
 // ---------- after each render ----------
 let observers = [];
 function afterRender(view, url) {
