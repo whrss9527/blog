@@ -1,48 +1,584 @@
 {
+  "blog-goes-static": {
+    "motif": "terminal",
+    "headline": "static",
+    "sub": "no server, just files",
+    "label": "博客改成纯静态页面应用",
+    "file": "~/goblog",
+    "lines": [
+      "$ systemctl stop goblog",
+      "$ systemctl disable goblog",
+      "$ node scripts/build.mjs",
+      "已生成 dist/：46 篇文章",
+      "$ git push  # → GitHub Pages"
+    ]
+  },
   "_comment": "每篇文章的封面：motif 是画面（见 scripts/lib/covers.mjs 里的 M），headline 是左侧大字，sub 是下面一行，label 是底部注释，lines 是画面里的文字。没列出的文章按标签自动选画面。",
-  "goblog-refactor": { "motif": "terminal", "headline": "goblog", "sub": "v1 → SSR · PWA", "label": "多端、离线、服务端渲染", "file": "~/goblog", "lines": ["$ git log --oneline", "a1f3 render markdown on server", "9c2e offline reading (PWA)", "47bd instant search", "$ make build && systemctl restart goblog"] },
-  "transaction-consistency-patterns-2pc-outbox": { "motif": "flow", "headline": "2PC", "sub": "→ Outbox pattern", "label": "分布式事务一致性", "nodes": ["order", "stock", "outbox"], "steps": [[0, 1, "prepare"], [1, 0, "vote: yes"], [0, 1, "commit"], [0, 2, "INSERT event"], [2, 1, "relay → MQ"], [1, 2, "ack"]] },
-  "harmonyos-signing-key": { "motif": "key", "headline": "HarmonyOS", "headlineSize": 56, "sub": ".p12 · .cer · .p7b", "label": "签名密钥机制", "mark": "keystore.p12" },
-  "mysql-sharding-migration": { "motif": "database", "variant": "shards", "headline": "Sharding", "headlineSize": 60, "sub": "game_id → t_0..t_n", "label": "平滑切换到分表架构" },
-  "smart-spending": { "motif": "receipt", "headline": "spend()", "sub": "该省省，该花花", "label": "消费观", "mark": "2025", "lines": ["必需品|✓", "体验|✓", "冲动消费|✗", "时间|priceless", "TOTAL|值得"] },
-  "golang-eof": { "motif": "alert", "headline": "io.EOF", "sub": "connection reset by peer", "label": "Go 网络错误深度剖析", "file": "net/http", "lines": ["read: connection reset by peer", "Post \"http://api\": EOF", "conn.Read() -> 0, io.EOF", "keep-alive idle timeout"] },
-  "context-deadline-exceeded": { "motif": "code", "headline": "ctx", "sub": "deadline exceeded", "label": "消除超时错误", "file": "client.go", "lines": ["ctx, cancel := context.WithTimeout(", "    parent, 5*time.Second)", "defer cancel()", "resp, err := call(ctx, req)", "if errors.Is(err, ctx.Err()) {", "  return ErrTimeout", "}"] },
-  "golang-deadlock": { "motif": "deadlock", "headline": "deadlock", "headlineSize": 58, "sub": "上报队列", "label": "死锁日记：手写 Go 上报队列", "nodes": ["producer", "consumer"] },
-  "gorm-mysql-error-handling-duplicate-key-translations": { "motif": "code", "headline": "1062", "sub": "Duplicate entry", "label": "gorm 错误码映射", "file": "repo.go", "lines": ["err := db.Create(&user).Error", "var me *mysql.MySQLError", "if errors.As(err, &me) &&", "  me.Number == 1062 {", "  return ErrDuplicatedKey", "}"] },
-  "cloudflare-tunnel": { "motif": "network", "headline": "tunnel", "sub": "localhost → public", "label": "免费内网穿透", "nodes": ["localhost:8080", "cloudflared", "edge", "visitor"] },
-  "2023-shopping-journey-value-and-regrets": { "motif": "receipt", "headline": "2023", "sub": "值不值得买", "label": "年度购物回忆录", "mark": "2023", "lines": ["键盘|✓", "显示器|✓", "咖啡机|✓", "健身卡|✗", "投影仪|✗"] },
-  "server-communication-methods": { "motif": "flow", "headline": "push/pull", "headlineSize": 54, "sub": "WS · SSE · polling", "label": "服务端通信方式对比", "nodes": ["browser", "server"], "steps": [[0, 1, "GET /poll"], [1, 0, "204"], [0, 1, "GET /long-poll"], [1, 0, "…200 later"], [0, 1, "Upgrade: websocket"], [1, 0, "event: message"]] },
-  "api-design-openapi&grpc": { "motif": "code", "headline": "oneof", "sub": "OpenAPI vs gRPC", "label": "多类型属性的建模", "file": "pay.proto", "lines": ["message Payment {", "  oneof method {", "    Card   card   = 1;", "    Wallet wallet = 2;", "  }", "}"] },
-  "unified-standards-code-management-in-team-development": { "motif": "git", "headline": "standards", "headlineSize": 54, "sub": "repo · image · tag", "label": "代码仓库与镜像管理", "lines": ["main", "feature/x", "hotfix/1.2.1"] },
-  "fnhon": { "motif": "bike", "headline": "FNHON", "sub": "通勤 · 骑行", "label": "我的自行车" },
-  "r2-rclone": { "motif": "terminal", "headline": "rclone", "sub": "→ Cloudflare R2", "label": "命令行管理对象存储", "lines": ["$ rclone config", "$ rclone ls r2:blog", "    4821 img/cover.png", "$ rclone sync ./img r2:blog/img", "Transferred: 128 / 128, 100%"] },
-  "gorm-trace-id": { "motif": "code", "headline": "trace_id", "headlineSize": 56, "sub": "GORM · slow SQL", "label": "SQL 日志串上 trace ID", "file": "logger.go", "lines": ["func (l *Logger) Trace(ctx context.Context,", "  begin time.Time, fc func() (string, int64),", "  err error) {", "  sql, rows := fc()", "  log.WithContext(ctx).Infof(\"%s [%d]\",", "    sql, rows) // trace_id=…"] },
-  "pic-archive": { "motif": "cloud", "headline": "img://", "sub": "OSS → GitHub → R2", "label": "更换博客图床", "mark": "pic.whrss.com" },
-  "go-grace-stop": { "motif": "signal", "headline": "graceful", "headlineSize": 58, "sub": "go-kratos 源码", "label": "Go 程序优雅退出", "mark": "SIGTERM", "after": "Stop(ctx) → exit 0" },
-  "go-signal": { "motif": "signal", "headline": "os.Signal", "headlineSize": 56, "sub": "signal.Notify", "label": "Go 中的信号处理", "mark": "SIGINT", "after": "<-sigCh" },
-  "planet-scale": { "motif": "git", "headline": "PlanetScale", "headlineSize": 50, "sub": "branching MySQL", "label": "Serverless 数据库", "lines": ["main", "add-index", "deploy request #3"] },
-  "feed-sub": { "motif": "feed", "headline": "RSS", "sub": "订阅优化", "label": "一次全面改进的实践" },
-  "done-lately": { "motif": "terminal", "headline": "~/lately", "headlineSize": 56, "sub": "最近在做的事", "label": "GitHub Action · GPT · whisper", "lines": ["$ ls ~/lately", "github-action/  gpt-plus/", "whisper/  v2ex/  pmp/", "$ whisper talk.m4a --model medium", "[00:00.000] 大家好……"] },
-  "me": { "motif": "terminal", "headline": "whoami", "sub": "游戏开发者", "label": "自我介绍", "lines": ["$ whoami", "whrss · game server developer", "$ cat skills", "go  kotlin  java  mysql  redis", "$ echo $GOAL", "keep learning"] },
-  "github-poster": { "motif": "heatmap", "headline": "poster", "sub": "GitHub Action", "label": "同步运动数据生成热力图" },
-  "gorm-save-issue": { "motif": "code", "headline": "Save()", "sub": "踩坑记录", "label": "Gorm Save 方法更新", "file": "user.go", "lines": ["// Save updates ALL fields,", "// zero values included", "db.Save(&user)", "// update only what changed", "db.Model(&user).Updates(", "  map[string]any{\"name\": n})"] },
-  "exception-tracking": { "motif": "alert", "headline": "incident", "headlineSize": 58, "sub": "追踪与处理", "label": "一次线上异常", "file": "prod.log", "lines": ["ERROR 408 Request Timeout", "upstream: idle conn closed", "retry 1/3 … 2/3 …", "root cause: keep-alive"] },
-  "go-test": { "motif": "tests", "headline": "go test", "sub": "单元测试实践", "label": "表格驱动 · mock · 覆盖率", "lines": ["TestCreateOrder", "TestCreateOrder/empty", "TestPay/timeout", "TestRefund"] },
-  "pake": { "motif": "window", "headline": "pake", "sub": "web → app", "label": "把网页打包成桌面应用", "file": "Pake.app" },
-  "github-action": { "motif": "git", "headline": "CI/CD", "sub": "GitHub Action", "label": "自动化部署初试", "lines": ["main", "build", "deploy"] },
-  "soft-routes": { "motif": "network", "headline": "OpenWrt", "sub": "旁路由", "label": "家庭软路由搭建", "nodes": ["modem", "router", "OpenWrt", "devices"], "dashedTo": [1, 3] },
-  "clash-auto-triage": { "motif": "network", "headline": "rules", "sub": "DOMESTIC → DIRECT", "label": "Clash 国内外自动分流", "nodes": ["device", "clash", "proxy", "web"], "dashedTo": [1, 3] },
-  "ssh-proxy-conn": { "motif": "terminal", "headline": "ssh -R", "sub": "反向代理", "label": "本地服务通过 SSH 对外", "lines": ["$ ssh -N -R 8080:localhost:3000 \\", "    user@vps", "$ curl http://vps:8080", "HTTP/1.1 200 OK"] },
-  "the-ai-challenge": { "motif": "neural", "headline": "AI", "sub": "惊喜又焦虑", "label": "AI 技术的发展" },
-  "newbing-vs-chatgpt": { "motif": "neural", "headline": "New Bing", "headlineSize": 56, "sub": "vs ChatGPT", "label": "搜索引擎聊天机器人" },
-  "open-source-projects": { "motif": "git", "headline": "★ OSS", "sub": "interesting & useful", "label": "有趣又实用的开源项目", "lines": ["main", "fork", "pull request"] },
-  "chat-message-store": { "motif": "database", "variant": "messages", "headline": "messages", "headlineSize": 56, "sub": "存储设计", "label": "聊天记录存储实践" },
-  "google-static-cdn": { "motif": "network", "headline": "CDN", "sub": "Google Cloud", "label": "静态页面 CDN 加速", "nodes": ["bucket", "load balancer", "edge", "user"] },
-  "find-newsletter": { "motif": "feed", "headline": "newsletter", "headlineSize": 50, "sub": "知识源", "label": "发现优质 Newsletter 和 Blog" },
-  "nginx-website": { "motif": "code", "headline": "nginx", "sub": "text/css", "label": "静态网站 CSS 解析异常", "file": "nginx.conf", "lines": ["server {", "  include mime.types;", "  location / {", "    root /var/www/site;", "  }", "}"] },
-  "hackintosh": { "motif": "chip", "headline": "Monterey", "headlineSize": 56, "sub": "+ Windows 11", "label": "黑苹果攒机", "mark": "OpenCore" },
-  "lets-encrypt": { "motif": "key", "headline": "HTTPS", "sub": "Let's Encrypt", "label": "免费证书申请", "mark": "certbot · 90 days" },
-  "tombstone-of-the-five": { "motif": "stele", "headline": "五人墓碑记", "headlineFont": "sans", "headlineSize": 58, "sub": "张溥 · 明", "label": "激于义而死焉者也", "lines": ["五人者", "盖当蓼洲", "周公之被逮", "激于义而死焉"] },
-  "effectiveness": { "motif": "contour", "headline": "效能", "headlineFont": "sans", "headlineSize": 64, "sub": "随想", "label": "生活效能" },
-  "test-function": { "motif": "tests", "headline": "hello", "sub": "测试一下", "label": "功能测试", "lines": ["TestMarkdown", "TestCodeBlock", "TestImage"] }
+  "goblog-refactor": {
+    "motif": "terminal",
+    "headline": "goblog",
+    "sub": "v1 → SSR · PWA",
+    "label": "多端、离线、服务端渲染",
+    "file": "~/goblog",
+    "lines": [
+      "$ git log --oneline",
+      "a1f3 render markdown on server",
+      "9c2e offline reading (PWA)",
+      "47bd instant search",
+      "$ make build && systemctl restart goblog"
+    ]
+  },
+  "transaction-consistency-patterns-2pc-outbox": {
+    "motif": "flow",
+    "headline": "2PC",
+    "sub": "→ Outbox pattern",
+    "label": "分布式事务一致性",
+    "nodes": [
+      "order",
+      "stock",
+      "outbox"
+    ],
+    "steps": [
+      [
+        0,
+        1,
+        "prepare"
+      ],
+      [
+        1,
+        0,
+        "vote: yes"
+      ],
+      [
+        0,
+        1,
+        "commit"
+      ],
+      [
+        0,
+        2,
+        "INSERT event"
+      ],
+      [
+        2,
+        1,
+        "relay → MQ"
+      ],
+      [
+        1,
+        2,
+        "ack"
+      ]
+    ]
+  },
+  "harmonyos-signing-key": {
+    "motif": "key",
+    "headline": "HarmonyOS",
+    "headlineSize": 56,
+    "sub": ".p12 · .cer · .p7b",
+    "label": "签名密钥机制",
+    "mark": "keystore.p12"
+  },
+  "mysql-sharding-migration": {
+    "motif": "database",
+    "variant": "shards",
+    "headline": "Sharding",
+    "headlineSize": 60,
+    "sub": "game_id → t_0..t_n",
+    "label": "平滑切换到分表架构"
+  },
+  "smart-spending": {
+    "motif": "receipt",
+    "headline": "spend()",
+    "sub": "该省省，该花花",
+    "label": "消费观",
+    "mark": "2025",
+    "lines": [
+      "必需品|✓",
+      "体验|✓",
+      "冲动消费|✗",
+      "时间|priceless",
+      "TOTAL|值得"
+    ]
+  },
+  "golang-eof": {
+    "motif": "alert",
+    "headline": "io.EOF",
+    "sub": "connection reset by peer",
+    "label": "Go 网络错误深度剖析",
+    "file": "net/http",
+    "lines": [
+      "read: connection reset by peer",
+      "Post \"http://api\": EOF",
+      "conn.Read() -> 0, io.EOF",
+      "keep-alive idle timeout"
+    ]
+  },
+  "context-deadline-exceeded": {
+    "motif": "code",
+    "headline": "ctx",
+    "sub": "deadline exceeded",
+    "label": "消除超时错误",
+    "file": "client.go",
+    "lines": [
+      "ctx, cancel := context.WithTimeout(",
+      "    parent, 5*time.Second)",
+      "defer cancel()",
+      "resp, err := call(ctx, req)",
+      "if errors.Is(err, ctx.Err()) {",
+      "  return ErrTimeout",
+      "}"
+    ]
+  },
+  "golang-deadlock": {
+    "motif": "deadlock",
+    "headline": "deadlock",
+    "headlineSize": 58,
+    "sub": "上报队列",
+    "label": "死锁日记：手写 Go 上报队列",
+    "nodes": [
+      "producer",
+      "consumer"
+    ]
+  },
+  "gorm-mysql-error-handling-duplicate-key-translations": {
+    "motif": "code",
+    "headline": "1062",
+    "sub": "Duplicate entry",
+    "label": "gorm 错误码映射",
+    "file": "repo.go",
+    "lines": [
+      "err := db.Create(&user).Error",
+      "var me *mysql.MySQLError",
+      "if errors.As(err, &me) &&",
+      "  me.Number == 1062 {",
+      "  return ErrDuplicatedKey",
+      "}"
+    ]
+  },
+  "cloudflare-tunnel": {
+    "motif": "network",
+    "headline": "tunnel",
+    "sub": "localhost → public",
+    "label": "免费内网穿透",
+    "nodes": [
+      "localhost:8080",
+      "cloudflared",
+      "edge",
+      "visitor"
+    ]
+  },
+  "2023-shopping-journey-value-and-regrets": {
+    "motif": "receipt",
+    "headline": "2023",
+    "sub": "值不值得买",
+    "label": "年度购物回忆录",
+    "mark": "2023",
+    "lines": [
+      "键盘|✓",
+      "显示器|✓",
+      "咖啡机|✓",
+      "健身卡|✗",
+      "投影仪|✗"
+    ]
+  },
+  "server-communication-methods": {
+    "motif": "flow",
+    "headline": "push/pull",
+    "headlineSize": 54,
+    "sub": "WS · SSE · polling",
+    "label": "服务端通信方式对比",
+    "nodes": [
+      "browser",
+      "server"
+    ],
+    "steps": [
+      [
+        0,
+        1,
+        "GET /poll"
+      ],
+      [
+        1,
+        0,
+        "204"
+      ],
+      [
+        0,
+        1,
+        "GET /long-poll"
+      ],
+      [
+        1,
+        0,
+        "…200 later"
+      ],
+      [
+        0,
+        1,
+        "Upgrade: websocket"
+      ],
+      [
+        1,
+        0,
+        "event: message"
+      ]
+    ]
+  },
+  "api-design-openapi&grpc": {
+    "motif": "code",
+    "headline": "oneof",
+    "sub": "OpenAPI vs gRPC",
+    "label": "多类型属性的建模",
+    "file": "pay.proto",
+    "lines": [
+      "message Payment {",
+      "  oneof method {",
+      "    Card   card   = 1;",
+      "    Wallet wallet = 2;",
+      "  }",
+      "}"
+    ]
+  },
+  "unified-standards-code-management-in-team-development": {
+    "motif": "git",
+    "headline": "standards",
+    "headlineSize": 54,
+    "sub": "repo · image · tag",
+    "label": "代码仓库与镜像管理",
+    "lines": [
+      "main",
+      "feature/x",
+      "hotfix/1.2.1"
+    ]
+  },
+  "fnhon": {
+    "motif": "bike",
+    "headline": "FNHON",
+    "sub": "通勤 · 骑行",
+    "label": "我的自行车"
+  },
+  "r2-rclone": {
+    "motif": "terminal",
+    "headline": "rclone",
+    "sub": "→ Cloudflare R2",
+    "label": "命令行管理对象存储",
+    "lines": [
+      "$ rclone config",
+      "$ rclone ls r2:blog",
+      "    4821 img/cover.png",
+      "$ rclone sync ./img r2:blog/img",
+      "Transferred: 128 / 128, 100%"
+    ]
+  },
+  "gorm-trace-id": {
+    "motif": "code",
+    "headline": "trace_id",
+    "headlineSize": 56,
+    "sub": "GORM · slow SQL",
+    "label": "SQL 日志串上 trace ID",
+    "file": "logger.go",
+    "lines": [
+      "func (l *Logger) Trace(ctx context.Context,",
+      "  begin time.Time, fc func() (string, int64),",
+      "  err error) {",
+      "  sql, rows := fc()",
+      "  log.WithContext(ctx).Infof(\"%s [%d]\",",
+      "    sql, rows) // trace_id=…"
+    ]
+  },
+  "pic-archive": {
+    "motif": "cloud",
+    "headline": "img://",
+    "sub": "OSS → GitHub → R2",
+    "label": "更换博客图床",
+    "mark": "pic.whrss.com"
+  },
+  "go-grace-stop": {
+    "motif": "signal",
+    "headline": "graceful",
+    "headlineSize": 58,
+    "sub": "go-kratos 源码",
+    "label": "Go 程序优雅退出",
+    "mark": "SIGTERM",
+    "after": "Stop(ctx) → exit 0"
+  },
+  "go-signal": {
+    "motif": "signal",
+    "headline": "os.Signal",
+    "headlineSize": 56,
+    "sub": "signal.Notify",
+    "label": "Go 中的信号处理",
+    "mark": "SIGINT",
+    "after": "<-sigCh"
+  },
+  "planet-scale": {
+    "motif": "git",
+    "headline": "PlanetScale",
+    "headlineSize": 50,
+    "sub": "branching MySQL",
+    "label": "Serverless 数据库",
+    "lines": [
+      "main",
+      "add-index",
+      "deploy request #3"
+    ]
+  },
+  "feed-sub": {
+    "motif": "feed",
+    "headline": "RSS",
+    "sub": "订阅优化",
+    "label": "一次全面改进的实践"
+  },
+  "done-lately": {
+    "motif": "terminal",
+    "headline": "~/lately",
+    "headlineSize": 56,
+    "sub": "最近在做的事",
+    "label": "GitHub Action · GPT · whisper",
+    "lines": [
+      "$ ls ~/lately",
+      "github-action/  gpt-plus/",
+      "whisper/  v2ex/  pmp/",
+      "$ whisper talk.m4a --model medium",
+      "[00:00.000] 大家好……"
+    ]
+  },
+  "me": {
+    "motif": "terminal",
+    "headline": "whoami",
+    "sub": "游戏开发者",
+    "label": "自我介绍",
+    "lines": [
+      "$ whoami",
+      "whrss · game server developer",
+      "$ cat skills",
+      "go  kotlin  java  mysql  redis",
+      "$ echo $GOAL",
+      "keep learning"
+    ]
+  },
+  "github-poster": {
+    "motif": "heatmap",
+    "headline": "poster",
+    "sub": "GitHub Action",
+    "label": "同步运动数据生成热力图"
+  },
+  "gorm-save-issue": {
+    "motif": "code",
+    "headline": "Save()",
+    "sub": "踩坑记录",
+    "label": "Gorm Save 方法更新",
+    "file": "user.go",
+    "lines": [
+      "// Save updates ALL fields,",
+      "// zero values included",
+      "db.Save(&user)",
+      "// update only what changed",
+      "db.Model(&user).Updates(",
+      "  map[string]any{\"name\": n})"
+    ]
+  },
+  "exception-tracking": {
+    "motif": "alert",
+    "headline": "incident",
+    "headlineSize": 58,
+    "sub": "追踪与处理",
+    "label": "一次线上异常",
+    "file": "prod.log",
+    "lines": [
+      "ERROR 408 Request Timeout",
+      "upstream: idle conn closed",
+      "retry 1/3 … 2/3 …",
+      "root cause: keep-alive"
+    ]
+  },
+  "go-test": {
+    "motif": "tests",
+    "headline": "go test",
+    "sub": "单元测试实践",
+    "label": "表格驱动 · mock · 覆盖率",
+    "lines": [
+      "TestCreateOrder",
+      "TestCreateOrder/empty",
+      "TestPay/timeout",
+      "TestRefund"
+    ]
+  },
+  "pake": {
+    "motif": "window",
+    "headline": "pake",
+    "sub": "web → app",
+    "label": "把网页打包成桌面应用",
+    "file": "Pake.app"
+  },
+  "github-action": {
+    "motif": "git",
+    "headline": "CI/CD",
+    "sub": "GitHub Action",
+    "label": "自动化部署初试",
+    "lines": [
+      "main",
+      "build",
+      "deploy"
+    ]
+  },
+  "soft-routes": {
+    "motif": "network",
+    "headline": "OpenWrt",
+    "sub": "旁路由",
+    "label": "家庭软路由搭建",
+    "nodes": [
+      "modem",
+      "router",
+      "OpenWrt",
+      "devices"
+    ],
+    "dashedTo": [
+      1,
+      3
+    ]
+  },
+  "clash-auto-triage": {
+    "motif": "network",
+    "headline": "rules",
+    "sub": "DOMESTIC → DIRECT",
+    "label": "Clash 国内外自动分流",
+    "nodes": [
+      "device",
+      "clash",
+      "proxy",
+      "web"
+    ],
+    "dashedTo": [
+      1,
+      3
+    ]
+  },
+  "ssh-proxy-conn": {
+    "motif": "terminal",
+    "headline": "ssh -R",
+    "sub": "反向代理",
+    "label": "本地服务通过 SSH 对外",
+    "lines": [
+      "$ ssh -N -R 8080:localhost:3000 \\",
+      "    user@vps",
+      "$ curl http://vps:8080",
+      "HTTP/1.1 200 OK"
+    ]
+  },
+  "the-ai-challenge": {
+    "motif": "neural",
+    "headline": "AI",
+    "sub": "惊喜又焦虑",
+    "label": "AI 技术的发展"
+  },
+  "newbing-vs-chatgpt": {
+    "motif": "neural",
+    "headline": "New Bing",
+    "headlineSize": 56,
+    "sub": "vs ChatGPT",
+    "label": "搜索引擎聊天机器人"
+  },
+  "open-source-projects": {
+    "motif": "git",
+    "headline": "★ OSS",
+    "sub": "interesting & useful",
+    "label": "有趣又实用的开源项目",
+    "lines": [
+      "main",
+      "fork",
+      "pull request"
+    ]
+  },
+  "chat-message-store": {
+    "motif": "database",
+    "variant": "messages",
+    "headline": "messages",
+    "headlineSize": 56,
+    "sub": "存储设计",
+    "label": "聊天记录存储实践"
+  },
+  "google-static-cdn": {
+    "motif": "network",
+    "headline": "CDN",
+    "sub": "Google Cloud",
+    "label": "静态页面 CDN 加速",
+    "nodes": [
+      "bucket",
+      "load balancer",
+      "edge",
+      "user"
+    ]
+  },
+  "find-newsletter": {
+    "motif": "feed",
+    "headline": "newsletter",
+    "headlineSize": 50,
+    "sub": "知识源",
+    "label": "发现优质 Newsletter 和 Blog"
+  },
+  "nginx-website": {
+    "motif": "code",
+    "headline": "nginx",
+    "sub": "text/css",
+    "label": "静态网站 CSS 解析异常",
+    "file": "nginx.conf",
+    "lines": [
+      "server {",
+      "  include mime.types;",
+      "  location / {",
+      "    root /var/www/site;",
+      "  }",
+      "}"
+    ]
+  },
+  "hackintosh": {
+    "motif": "chip",
+    "headline": "Monterey",
+    "headlineSize": 56,
+    "sub": "+ Windows 11",
+    "label": "黑苹果攒机",
+    "mark": "OpenCore"
+  },
+  "lets-encrypt": {
+    "motif": "key",
+    "headline": "HTTPS",
+    "sub": "Let's Encrypt",
+    "label": "免费证书申请",
+    "mark": "certbot · 90 days"
+  },
+  "tombstone-of-the-five": {
+    "motif": "stele",
+    "headline": "五人墓碑记",
+    "headlineFont": "sans",
+    "headlineSize": 58,
+    "sub": "张溥 · 明",
+    "label": "激于义而死焉者也",
+    "lines": [
+      "五人者",
+      "盖当蓼洲",
+      "周公之被逮",
+      "激于义而死焉"
+    ]
+  },
+  "effectiveness": {
+    "motif": "contour",
+    "headline": "效能",
+    "headlineFont": "sans",
+    "headlineSize": 64,
+    "sub": "随想",
+    "label": "生活效能"
+  },
+  "test-function": {
+    "motif": "tests",
+    "headline": "hello",
+    "sub": "测试一下",
+    "label": "功能测试",
+    "lines": [
+      "TestMarkdown",
+      "TestCodeBlock",
+      "TestImage"
+    ]
+  }
 }
