@@ -23,7 +23,7 @@ const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'blog.config.json'), '
 const DATA = path.resolve(ROOT, opt('--data', process.env.BLOG_DATA || config.dataDir));
 const OUT = path.resolve(ROOT, opt('--out', 'dist'));
 const PREVIEW = args.includes('--preview');
-// Where the site lives below its host: '' on its own domain, '/goblog' while it is
+// Where the site lives below its host: '' on its own domain, '/blog' while it is
 // a GitHub Pages project site (the deploy workflow passes what Pages reports).
 const BASE = String(opt('--base', process.env.BASE_PATH || '')).replace(/\/+$/, '').replace(/^(?=[^/])/, '/');
 const NOW = process.env.SOURCE_DATE_EPOCH ? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000) : new Date();
@@ -118,7 +118,7 @@ function documentHTML(view, pathname, { inline = null } = {}) {
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${e(view.title)}</title>
 <meta name="description" content="${e(view.description)}">
-<meta name="generator" content="goblog ${e(JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version)}">
+<meta name="generator" content="blog ${e(JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version)}">
 <meta name="theme-color" content="#e7ecf2">
 ${inline ? '' : `<link rel="canonical" href="${e(url)}">`}
 <meta property="og:type" content="${view.article ? 'article' : 'website'}">

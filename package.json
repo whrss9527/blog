@@ -1,5 +1,5 @@
 {
-  "name": "goblog",
+  "name": "blog",
   "version": "2.0.0",
   "private": true,
   "description": "了迹奇有没的博客：从 blog-data 生成的纯静态页面应用",

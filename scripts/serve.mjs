@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Serves dist/ the way GitHub Pages does: /posts/x answers with posts/x.html,
 // /intro answers with intro/index.html, anything else gets 404.html.
-//   node scripts/serve.mjs [--port 4173] [--dir dist] [--base /goblog]
+//   node scripts/serve.mjs [--port 4173] [--dir dist] [--base /blog]
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';

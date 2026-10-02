@@ -17,8 +17,8 @@ npm ci
 npm run dev            # build + serve dist/ on http://localhost:4173 (GitHub Pages rules)
 npm test               # node:test, builds test/fixtures/blog-data
 npm run preview        # also writes dist/preview.html: the whole site in one file (hash routing)
-node scripts/build.mjs --data ../blog-data --out dist --base /goblog   # options
-node scripts/serve.mjs --dir dist --base /goblog                      # serve a base-path build
+node scripts/build.mjs --data ../blog-data --out dist --base /blog   # options
+node scripts/serve.mjs --dir dist --base /blog                      # serve a base-path build
 ```
 
 ## Architecture
@@ -54,7 +54,7 @@ node scripts/serve.mjs --dir dist --base /goblog                      # serve a 
   slug to `{ motif, headline, sub, label, lines, … }`; unlisted posts get a motif from their tags. Covers use only
   generic font stacks (an `<img>` SVG can't load web fonts) and no external references. The preview inlines them.
 - **Base path**: `--base` / `BASE_PATH` prefixes every URL so the site works as a project site
-  (`https://whrss9527.github.io/goblog/`) before the custom domain is set; the deploy workflow passes the base path
+  (`https://whrss9527.github.io/blog/`) before the custom domain is set; the deploy workflow passes the base path
   GitHub Pages reports. The client reads it from `<html data-base>`.
 - **Styles** (`src/style.css`): tokens on `:root`, dark mode under `prefers-color-scheme` (guarded by
   `:root:not([data-theme="light"])`) and `[data-theme="dark"]`. `.glass` = translucent fill + `backdrop-filter` + a masked
