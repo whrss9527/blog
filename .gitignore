@@ -2,16 +2,10 @@
 .vscode
 .DS_Store
 .claude/
-/goblog
-/goblog-*.tar.gz
-logs/*
-/static/md.zip
-/heatmap.txt
-/feed.xml
-/blog_monitor.log
-/nohup.out
-conf/dev.yaml
-conf/prod.yaml
+node_modules/
+dist/
+# a local checkout of the content repository (see README)
+/blog-data
 # secrets / local credentials
 .env
 .env.*

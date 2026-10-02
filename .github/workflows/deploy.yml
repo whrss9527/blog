@@ -1,0 +1,81 @@
+name: Deploy
+
+# Builds the site from blog-data and publishes it with GitHub Pages.
+# Runs on every push to main, by hand, when blog-data asks for it
+# (repository_dispatch "blog-data-updated", see README), and every hour as a
+# fallback that only deploys when blog-data or this repository changed.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  repository_dispatch:
+    types: [blog-data-updated]
+  schedule:
+    - cron: "23 * * * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: whrss9527/blog-data
+          path: blog-data
+      # base_url / base_path: the custom domain once it is set, otherwise
+      # https://<owner>.github.io/<repo> and "/<repo>"
+      - uses: actions/configure-pages@v5
+        id: pages
+      - name: Anything new since the live build?
+        id: check
+        env:
+          LIVE: ${{ steps.pages.outputs.base_url }}
+        run: |
+          changed=true
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            live=$(curl -fsSL --max-time 20 "$LIVE/data/version.json" || echo '{}')
+            content=$(git -C blog-data rev-parse HEAD)
+            if [ "$(echo "$live" | jq -r '.content // empty' 2>/dev/null)" = "$content" ] && [ "$(echo "$live" | jq -r '.site // empty' 2>/dev/null)" = "$GITHUB_SHA" ]; then
+              changed=false
+              echo "$LIVE was built from blog-data $content and this commit; nothing to do."
+            fi
+          fi
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v5
+        if: steps.check.outputs.changed == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.check.outputs.changed == 'true'
+        run: npm ci
+      - if: steps.check.outputs.changed == 'true'
+        run: npm test
+      - if: steps.check.outputs.changed == 'true'
+        run: node scripts/build.mjs --data blog-data --base "${{ steps.pages.outputs.base_path }}"
+      - uses: actions/upload-pages-artifact@v4
+        if: steps.check.outputs.changed == 'true'
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

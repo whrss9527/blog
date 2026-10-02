@@ -1,222 +1,127 @@
 # goblog
 
-基于 Go 的 Markdown 博客系统：服务端渲染、Git 仓库为内容存储、可一键部署到 systemd。
+了迹奇有没的博客。2.0 起是**纯静态的页面应用**：没有服务器、没有数据库、没有后台。
+构建脚本读取内容仓库 [blog-data](https://github.com/whrss9527/blog-data)，生成整站静态文件，用 GitHub Pages 托管在 <https://blog.whrss.com>。
 
-## 特性
+- **像 App 一样切换页面**：每个页面都预渲染成 HTML（没开 JavaScript、搜索引擎都能读到全文）；在站内点链接时，浏览器用同一套模板直接渲染下一页，配合 View Transitions 过渡，卡片标题会「飞」进文章页，不整页刷新。
+- **玻璃质感**：缓慢漂移的极光背景、跟随指针的柔光、带高光描边的毛玻璃卡片（指针移上去会轻微倾斜、有反光）、液态滑动的导航指示器、从按钮处圆形扩散的明暗主题切换。系统设了「减少动态效果」「降低透明度」时自动收敛。
+- **搜索**：<kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> / <kbd>/</kbd> 呼出，搜标题、标签和全文，键盘上下选择、回车打开。
+- **阅读**：文章目录（宽屏侧栏，窄屏底部抽屉）、阅读进度条、代码块一键复制、图片点击放大、上一篇 / 下一篇、相关文章、过时提醒（写于两年前的技术文章）。
+- **评论**：giscus（GitHub Discussions），快滚到时才加载；按文章的**原地址**找讨论，以前的评论都在。
+- **订阅与 SEO**：Atom 订阅（`/feed.xml`，旧地址 `/feed` 照常可用）、sitemap、canonical、Open Graph、JSON-LD。
+- **离线阅读**：Service Worker，读过的文章断网也能打开。
+- **旧地址全部可用**：`/posts/<文章>`、`/pages/<页面>`、`/archive`、`/tags`、`/reading`、`/stats`、`/random`、`/intro`、`/?tag_id=`、`/?category_id=`、`/?keyword=`；文章里的 `#标题锚点` 规则不变。
 
-- **文件存储**：博客内容（文章、分类、标签、页面）以 Markdown 文件形式存放在独立的 Git 仓库中（`blog-data`），运行时按需克隆/拉取，无需数据库。
-- **管理后台**：登录后可对文章、页面、分类、标签、阅读清单做增删改查；admin 操作通过 session cookie 鉴权。
-  手机上同样可用；编辑器会在浏览器本地自动保留草稿（关页、登录过期、保存失败都不丢稿），保存前校验文章地址，不会覆盖别的文章。
-  标签可以改名、合并（改成另一个标签的名字）、删除，文章里的引用自动跟着变；还有文章在用的分类不允许删除。
-- **公开前台**：首页、文章页、标签页、分类页、阅读清单、关于页、站内搜索（基于内存索引）。
-- **RSS / Atom**：启动时生成 `/feed.xml`。
-- **Sitemap**：`/sitemap.xml`。
-- **评论**：基于 [giscus](https://giscus.app/) GitHub Discussions 评论组件（滚动到附近才加载）。
-- **热力图**：每小时定时聚合写入 `heatmap.txt`，用于贡献图展示。
-- **优雅退出**：`SIGTERM` 触发，超时时间可配。
-- **服务端渲染 Markdown**：文章 HTML 随响应直出（首屏无白屏、无需 jQuery/editor.md、无 JS 也可读、爬虫可见），
-  渲染结果与后台 editor.md 预览保持一致；含流程图 / 时序图 / 公式的文章自动回退到浏览器渲染。
-- **PWA / 离线阅读**：可安装到桌面与手机主屏；读过的文章自动保存，断网时照常打开，没读过的地址显示离线页并列出可读文章；
-  带指纹的静态资源缓存优先。`app.pwa: false` 一键关闭并自动注销已安装的 Service Worker。
-- **SEO**：canonical、Open Graph / Twitter Card（自动取文内首图）、JSON-LD（`BlogPosting` / `Blog`）、静态资源长缓存。
-- **多端适配**：前台无框架依赖（CSS 变量 + 原生 JS），手机 / 平板 / 桌面自适应，明暗主题跟随系统，
-  文章目录在宽屏为粘性侧栏、窄屏为底部抽屉。版本变更见 [CHANGELOG.md](CHANGELOG.md)。
-
-## 技术栈
-
-| 类别 | 技术 |
-|------|------|
-| 语言 | Go 1.23+ |
-| Web 框架 | [Gin](https://github.com/gin-gonic/gin) |
-| 模板 | `html/template`（启动时缓存）|
-| 配置 | [Viper](https://github.com/spf13/viper) (YAML) |
-| 日志 | `log/slog`（自定义 handler，支持 trace id）|
-| Markdown | [editor.md](https://github.com/pandao/editor.md)（后台编辑器）+ [blackfriday](https://github.com/russross/blackfriday)（前台服务端渲染，`internal/pkg/md2html`）|
-| 内容存储 | 独立 Git 仓库 + 文件系统 |
-| 进程管理 | systemd（推荐）|
-
-## 目录结构
+## 目录
 
 ```
 .
-├── Makefile                 # 构建 / 打包 / 格式化
-├── Dockerfile               # 可选：容器化部署
-├── conf/
-│   ├── dev.yaml.example     # 开发配置模板
-│   ├── prod.yaml.example    # 生产配置模板
-│   └── goblog.service       # systemd 单元模板
-├── internal/
-│   ├── config/              # 配置加载（viper）
-│   ├── filestore/           # 文件存储仓储层
-│   ├── handler/
-│   │   ├── admin/           # 管理后台路由
-│   │   └── front/           # 前台公开路由
-│   ├── pkg/                 # 应用内部工具（gin、view、model、slogx）
-│   └── routers/             # 路由装配
-├── pkg/                     # 通用库（utils、cache、exception）
-├── static/                  # 静态资源
-├── tpl/                     # 模板（default 前台、admin 后台、intro 介绍页）
-├── main.go
-└── startup.sh               # 备用：手动启停脚本
+├── blog.config.json        站点名称、域名、导航、评论、统计
+├── scripts/
+│   ├── build.mjs           构建入口：blog-data → dist/
+│   ├── serve.mjs           本地预览服务器（按 GitHub Pages 的规则响应）
+│   └── lib/
+│       ├── content.mjs     读取文章、页面、分类、标签、书单
+│       ├── markdown.mjs    Markdown → HTML（marked，兼容 editor.md 的写法）
+│       └── extras.mjs      订阅、sitemap、manifest、Service Worker
+├── src/
+│   ├── render.js           页面模板：构建时预渲染、浏览器里站内跳转，用的是同一份
+│   ├── app.js              浏览器端：路由、搜索、主题、动效、目录、评论
+│   └── style.css           样式
+├── public/                 原样复制的文件：图标、logo、/intro 简历页
+├── test/                   node:test 测试和一份小的样例内容
+└── .github/workflows/      CI（测试 + 构建）、Deploy（构建 + 发布到 GitHub Pages）
 ```
 
 ## 本地运行
 
+需要 Node.js 20 以上。
+
 ```bash
-# 1. 克隆仓库
-git clone git@github.com:whrss9527/goblog.git
+git clone https://github.com/whrss9527/goblog.git
 cd goblog
-
-# 2. 准备配置
-cp conf/dev.yaml.example conf/dev.yaml
-# 至少需要修改：app.git_repo（指向你的 blog-data 仓库），如果是私有仓库还要填 app.git_token
-# 用 `openssl rand -hex 32` 生成一个 session_secret 替换占位值
-vim conf/dev.yaml
-
-# 3. 编译
-make build       # 默认产出 linux/amd64 二进制
-make mac         # 或编译为 macOS arm64
-
-# 4. 运行
-./goblog -config ./conf/dev.yaml
-# 浏览器打开 http://localhost:9091
+git clone https://github.com/whrss9527/blog-data.git   # 内容放在仓库里的 blog-data/（已在 .gitignore 里）
+npm ci
+npm run dev        # 构建并在 http://localhost:4173 预览
+npm test           # 测试
+npm run preview    # 另外生成 dist/preview.html：整站打包成一个文件，双击就能看
 ```
 
-### 只想看看效果，不碰线上数据
+内容仓库在别处时：`node scripts/build.mjs --data ../blog-data`，或者设置环境变量 `BLOG_DATA`。
 
-`data_dir` 指向一个**不含 `.git`** 的目录、并且不配置 `git_repo` 时，goblog 只读写这个目录：不 pull、不 commit、不 push。
-拿内容仓库的一份导出当数据，就能放心地点赞、改文章、试后台，线上仓库一个字节都不会变：
+## 写文章
 
-```bash
-mkdir -p /tmp/goblog-preview/data
-git -C /path/to/blog-data archive HEAD | tar -x -C /tmp/goblog-preview/data   # 导出的副本里没有 .git
-
-# conf/preview.yaml：data_dir 指向上面的目录，git_repo 留空，cdn 写 "/static"（不依赖外部 CDN），
-# app.host 写 http://localhost:9191，server.host 写 "127.0.0.1"（只有本机能访问），server.http_port 写 9191
-./goblog -config ./conf/preview.yaml
-```
-
-本机 / 局域网地址（`localhost`、`127.0.0.1`、`192.168.x.x`、`*.local` 等）打开的页面不会加载 Google Analytics，预览不会污染线上统计。
-
-## 生产部署（systemd）
-
-```bash
-# 服务器上
-git clone https://github.com/whrss9527/goblog.git /opt/goblog
-cd /opt/goblog
-
-# 配置（参考 conf/prod.yaml.example，注意改 host 字段为对外域名）
-vim conf/prod.yaml
-
-# 构建（服务器需安装 Go 1.23+）
-make build
-
-# 安装 systemd 服务
-mkdir -p /var/lib/goblog/data /var/log/goblog
-cp conf/goblog.service /etc/systemd/system/
-systemctl daemon-reload
-systemctl enable --now goblog
-systemctl status goblog
-```
-
-更新发版：
-```bash
-cd /opt/goblog && git pull && make build && systemctl restart goblog
-```
-
-## 从 1.0 升级到 1.10
-
-1.1 ～ 1.10 没有破坏性变更：配置文件不改也能启动，内容仓库的文件格式保持不变。照常发版即可：
-
-```bash
-cd /opt/goblog && git pull && make build && systemctl restart goblog
-```
-
-升级时值得过一遍的事情：
-
-| 事项 | 说明 |
-|------|------|
-| 静态文件 | `tpl/`、`static/`、`robots.txt` 随仓库更新；用 `make tar` 发版的话包里也已经带上。新增的 `static/icons/`、`static/js/*.js`、`static/admin/` 都从本机 `/static` 加载（带内容指纹），**CDN 桶（`app.cdn`）不需要上传任何新文件** |
-| 后台账号 | 内容仓库是公开的话，把账号搬进配置文件并**换一个新密码**，见下文「后台账号放在配置文件里」。没搬之前，后台每个列表页顶部都会有一条提醒 |
-| 新配置项 | 全部可选：`description`（站点简介，建议填，首页标题和搜索结果摘要会用）、`markdown_render`、`pwa`、`admin_email` / `admin_password_hash`、`server.host`（用 Cloudflare Tunnel / nginx 时建议 `"127.0.0.1"`），说明见 `conf/prod.yaml.example` |
-| robots.txt | 1.9.1 起只屏蔽 `/admin/`、`/api/`、`/random`、`/offline`，并附上 sitemap 地址。此前的内容是 `Disallow: /`（拒绝所有搜索引擎）；如果那是有意的，把仓库根目录的 `robots.txt` 改回去即可 |
-| Service Worker | 访客的浏览器会注册 `/sw.js`（离线阅读）。反向代理 / Cloudflare 不要给 `/sw.js` 加长缓存（服务端返回的是 `no-cache`）。想关掉就设 `pwa: false` —— 它会让已安装的 Service Worker 自行注销并清空缓存；**回滚到 1.7 之前的版本，也请先这样跑几天** |
-| 内容仓库的新文件 | `likes.json`（点赞数，和 `views.json` 一样每小时提交一次）。草稿在 `<data_dir>/.drafts/`，不进仓库 |
-| 旧标签 | 1.9 之前用「`a, b`」这种写法输入标签，会产生带前导空格的重复标签（如 `" blog"` 和 `"blog"` 并存）。后台「标签」页现在可以改名 / 删除：把带空格的那个**改名成正常的名字**，两个标签就会合并，文章自动换到留下的那个标签下 |
-
-## 配置说明
-
-最小化配置（见 `conf/dev.yaml.example`）：
+文章就是 blog-data 里的 `posts/<地址>.md`，文件名就是文章地址（`/posts/<地址>`）。文件头：
 
 ```yaml
-app:
-  name: "你的博客名"
-  mode: release                # debug / release
-  host: https://your-domain    # 对外可访问的 URL，sitemap 和文章绝对链接会用
-  session_secret: "<32 字节随机串>"
-  data_dir: "/var/lib/goblog/data"
-  git_repo: "https://github.com/your-username/blog-data.git"
-  git_token: ""                # 私有 blog-data 仓库才需要填 PAT (Contents: Read)
-  description: ""              # 可选：站点一句话简介，用于首页标题 / meta description / 结构化数据
-  markdown_render: server      # 可选：server（默认，服务端直出 HTML）/ client（浏览器内 editor.md 渲染）
-  pwa: true                    # 可选：PWA / 离线阅读开关，默认开启；false 会让已安装的 Service Worker 自动注销
-  admin_email: ""              # 推荐：后台账号写在配置里（见下文「后台账号放在配置文件里」）
-  admin_password_hash: ""      # ./goblog -hash-password 生成
-
-server:
-  host: ""                     # 可选：监听地址，留空 = 所有网卡；nginx / cloudflared 之后建议 "127.0.0.1"
-  http_port: 9091
-  graceful_shutdown_timeout: 15s
+---
+title: "标题"
+status: 1                  # 1 发布；其他值是草稿，不会出现在网站上
+created_at: 2026-10-01T09:00:00+08:00
+updated_at: 2026-10-01T09:00:00+08:00
+category_id: 1             # categories.json 里的 id
+tag_ids: [46, 47]          # tags.json 里的 id
+is_top: 0                  # 1 置顶
+description: "一两句摘要，用在卡片、搜索结果和分享卡片上"
+word_count: 1268           # 可省略，省略时按正文字数算
+---
 ```
 
-### 后台账号放在配置文件里（推荐）
+正文是 Markdown，写法和以前的编辑器（editor.md）一致：单个换行就是换行，`--`、`...`、引号会变成排版用的符号，支持表格、任务列表、`:fa-rocket:` 这类表情短码。可以写少量 HTML，但脚本、事件属性这类会被去掉。
+`pages/<id>.md` 是独立页面（`/pages/<id>`），`books.json` 是阅读页的书单，封面放在 `covers/`。
 
-内容仓库（`blog-data`）里的 `users.json` 保存着后台账号的 bcrypt 密码哈希。**如果内容仓库是公开的，这个哈希任何人都能下载**，
-弱密码可以被离线暴力破解。建议：
+每篇文章的封面图是构建时画出来的 SVG（深色终端 / 蓝图风格），在本仓库的 `scripts/covers.json` 里按文章地址配置：`motif` 选画面（代码编辑器、终端、数据库分片、网络拓扑、时序图、信号、死锁、钥匙、热力图、云存储、芯片、神经网络、订阅、分支图、测试、小票、自行车、石碑、等高线、窗口、报错），`headline` / `sub` 是左侧的大字和副标题，`label` 是底部的注释，`lines` 是画面里的文字。没配置的新文章按标签自动选画面。
 
-```bash
-./goblog -hash-password        # 输入新密码，得到 $2a$12$... 形式的哈希
-```
+推到 blog-data 之后，网站一小时内自动更新；想马上更新，在本仓库的 Actions 里手动运行 **Deploy**，或者让 blog-data 推送时通知本仓库（见下面「内容更新后自动发布」）。
 
-把邮箱和哈希写进 `conf/prod.yaml`（该文件不进任何仓库）：
+`views.json` 里的阅读数是静态版之前的统计，网站上还会显示，但不再增长。
+
+## 发布到 GitHub Pages（一次性设置）
+
+1. 本仓库 **Settings → Pages → Build and deployment → Source** 选 **GitHub Actions**。
+2. 合并到 `main`（或在 Actions 里手动运行 **Deploy**）。第一次发布后，站点在 `https://whrss9527.github.io/<仓库名>/` 上就能完整预览（构建会自动带上这个子路径）。仓库改名后地址跟着变，不用改代码。
+3. 确认没问题后切换域名：
+   1. DNS（Cloudflare）：`blog` 改成 `CNAME` → `whrss9527.github.io`，**仅 DNS**（灰色云朵），GitHub 才能签发证书。
+   2. **Settings → Pages → Custom domain** 填 `blog.whrss.com` 并保存，证书签好后勾上 **Enforce HTTPS**。
+   3. 在 Actions 里手动运行一次 **Deploy**：子路径去掉，所有链接回到根路径。
+4. 旧的 goblog 服务（systemd）可以停掉了。
+
+### 内容更新后自动发布（可选）
+
+在 blog-data 里加一个工作流，推送后通知本仓库重新发布。需要一个对本仓库有 Contents 读写权限的 fine-grained token，存成 blog-data 的 Secret `BLOG_DISPATCH_TOKEN`：
 
 ```yaml
-app:
-  admin_email: "you@example.com"
-  admin_password_hash: "$2a$12$..."
+# blog-data/.github/workflows/notify.yml
+on: push
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -fsS -X POST -H "Authorization: Bearer ${{ secrets.BLOG_DISPATCH_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/whrss9527/goblog/dispatches \
+            -d '{"event_type":"blog-data-updated"}'
 ```
 
-两项都配置后只认这个账号，`users.json` 不再生效；随后可以把 `users.json` 从内容仓库删掉。
-旧哈希仍然留在 Git 历史里，所以**一定要换一个新密码**，不要沿用旧的。
+不加也行：Deploy 每小时检查一次，blog-data 有新提交才发布。仓库改名后记得改这里的地址。
 
-### 草稿
+## 隐私与安全
 
-写文章时「存草稿」会把未发布的文章保存在服务器的 `<data_dir>/.drafts/`：不公开、不出现在首页 / 归档 / RSS / sitemap / 搜索里，
-也**不会提交到内容仓库**（通过 `.git/info/exclude` 排除，仓库内容本身不被改动）。代价是草稿只存在于这台服务器上 ——
-容器部署请把 `data_dir` 放在持久卷里。草稿可以在后台预览，发布时才会创建新标签并进入仓库。
-另外，编辑器会在浏览器本地自动备份正在输入的内容（关页、登录过期、保存失败都能恢复）。
+- 构建只读取 `posts/`、`pages/`、`categories.json`、`tags.json`、`books.json`、`views.json`、`covers/`，**不会**把 `users.json` 带进网站（测试里有检查）。
+  blog-data 是公开仓库，`users.json` 里的密码哈希任何人都能下载；静态版不再需要它，建议从 blog-data 里删掉，并换掉在别处用过的同一个密码。
+- Google Analytics 只在正式域名上加载，本机和局域网地址不会加载。
 
-## 开发规范
+## 从 1.x 升级
 
-遵循 [Uber Go 编码规范](https://github.com/uber-go/guide/blob/master/style.md)。
+1.x 是 Go 写的服务端渲染博客（Gin + 管理后台）。2.0 去掉了服务端：
 
-提交前：
-```bash
-make fmt   # gofmt -s -w .
-go test ./...
-```
+| 1.x | 2.0 |
+| --- | --- |
+| 管理后台写文章 | 直接在 blog-data 里写 Markdown（任何编辑器、GitHub 网页都行） |
+| 服务端渲染 Markdown | 构建时渲染，规则不变 |
+| `/api/search` | 浏览器里搜索（全文索引随站点一起生成） |
+| 点赞、实时阅读数 | 去掉了（需要服务端）；历史阅读数保留展示 |
+| systemd 部署 | GitHub Pages |
 
-## 常用命令
-
-| 命令 | 说明 |
-|------|------|
-| `make build` | 交叉编译 linux/amd64 |
-| `make mac` | 编译 macOS arm64 |
-| `make tidy` | `go mod tidy` |
-| `make fmt` | 格式化代码 |
-| `make tar` | 打成发布 tar.gz |
-| `make clean` | 清理产物 |
-
-## License
-
-MIT
+最后一个服务端版本是 [v1.10.0](https://github.com/whrss9527/goblog/tree/v1.10.0)，需要时可以从那里找回。
