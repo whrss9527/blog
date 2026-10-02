@@ -1,4 +1,4 @@
-# goblog
+# blog
 
 了迹奇有没的博客。2.0 起是**纯静态的页面应用**：没有服务器、没有数据库、没有后台。
 构建脚本读取内容仓库 [blog-data](https://github.com/whrss9527/blog-data)，生成整站静态文件，用 GitHub Pages 托管在 <https://blog.whrss.com>。
@@ -38,8 +38,8 @@
 需要 Node.js 20 以上。
 
 ```bash
-git clone https://github.com/whrss9527/goblog.git
-cd goblog
+git clone https://github.com/whrss9527/blog.git
+cd blog
 git clone https://github.com/whrss9527/blog-data.git   # 内容放在仓库里的 blog-data/（已在 .gitignore 里）
 npm ci
 npm run dev        # 构建并在 http://localhost:4173 预览
@@ -100,11 +100,11 @@ jobs:
       - run: |
           curl -fsS -X POST -H "Authorization: Bearer ${{ secrets.BLOG_DISPATCH_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/whrss9527/goblog/dispatches \
+            https://api.github.com/repos/whrss9527/blog/dispatches \
             -d '{"event_type":"blog-data-updated"}'
 ```
 
-不加也行：Deploy 每小时检查一次，blog-data 有新提交才发布。仓库改名后记得改这里的地址。
+不加也行：Deploy 每小时检查一次，blog-data 有新提交才发布。
 
 ## 隐私与安全
 
@@ -124,4 +124,4 @@ jobs:
 | 点赞、实时阅读数 | 去掉了（需要服务端）；历史阅读数保留展示 |
 | systemd 部署 | GitHub Pages |
 
-最后一个服务端版本是 [v1.10.0](https://github.com/whrss9527/goblog/tree/v1.10.0)，需要时可以从那里找回。
+最后一个服务端版本是 [v1.10.0](https://github.com/whrss9527/blog/tree/v1.10.0)，需要时可以从那里找回。
