@@ -151,3 +151,16 @@ test('home filters: ?tag_id=, ?category_id=, ?keyword= with full text', () => {
   assert.deepEqual(filterPosts(site, new URLSearchParams('keyword=redis'), search).posts.map(p => p.slug), ['odd-name']);
   assert.equal(filterPosts(site, new URLSearchParams('keyword=redis')).posts.length, 0);
 });
+
+test('build: every post gets drawn cover art', () => {
+  const site = JSON.parse(read('data/site.json'));
+  for (const p of site.posts) {
+    assert.equal(p.cover, `/covers/posts/${encodeURIComponent(p.slug)}.svg`);
+    const svg = read(`covers/posts/${p.slug}.svg`);
+    assert.match(svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+    assert.doesNotMatch(svg, /<script|href="http/);
+  }
+  assert.match(read('index.html'), /<img src="\/covers\/posts\/hello-world\.svg"/);
+  assert.match(read('posts/hello-world.html'), /class="article-cover"/);
+  assert.match(read('preview.html'), /data:image\/svg\+xml;base64/);
+});

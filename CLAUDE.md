@@ -49,6 +49,10 @@ node scripts/serve.mjs --dir dist --base /goblog                      # serve a 
   `archive.html`, which keeps 1.x addresses (no trailing slash) and therefore giscus pathnames unchanged. Plus
   `feed.xml` and `feed` (Atom, pinned first then newest — the profile README sync reads this order), `sitemap.xml`,
   `robots.txt`, `manifest.webmanifest`, `sw.js` (`scripts/lib/extras.mjs`).
+- **Covers** (`scripts/lib/covers.mjs`, `scripts/covers.json`): every post gets an SVG cover written to
+  `covers/posts/<slug>.svg` (dark "terminal / blueprint" style in both themes, seeded by the slug). `covers.json` maps a
+  slug to `{ motif, headline, sub, label, lines, … }`; unlisted posts get a motif from their tags. Covers use only
+  generic font stacks (an `<img>` SVG can't load web fonts) and no external references. The preview inlines them.
 - **Base path**: `--base` / `BASE_PATH` prefixes every URL so the site works as a project site
   (`https://whrss9527.github.io/goblog/`) before the custom domain is set; the deploy workflow passes the base path
   GitHub Pages reports. The client reads it from `<html data-base>`.

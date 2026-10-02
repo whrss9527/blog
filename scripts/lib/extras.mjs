@@ -61,8 +61,8 @@ export function manifest(site, base = '') {
     start_url: `${base}/`,
     scope: `${base}/`,
     display: 'standalone',
-    background_color: '#eef0f6',
-    theme_color: '#eef0f6',
+    background_color: '#e7ecf2',
+    theme_color: '#e7ecf2',
     icons: [
       { src: `${base}/icons/icon-192.png`, sizes: '192x192', type: 'image/png' },
       { src: `${base}/icons/icon-512.png`, sizes: '512x512', type: 'image/png' },

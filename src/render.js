@@ -91,14 +91,15 @@ function postMeta(post, { views = true } = {}) {
     ${views && post.views ? `<span title="阅读 ${post.views} 次（静态版之前的统计）">${icon('eye')}${humanCount(post.views)}</span>` : ''}`;
 }
 
-// Hues for generated artwork: neighbours on the wheel (violet, blue, cyan, teal, pink),
+// Hues for the fallback artwork: cold neighbours on the wheel (blue, cyan, steel),
 // so each card glows in one family instead of clashing.
-const ART_HUES = [252, 205, 318, 228, 182, 280, 340, 196, 265];
+const ART_HUES = [205, 215, 195, 225, 188, 210, 200, 220, 192];
 
 export function postCard(ctx, post, i = 0, opts = {}) {
   const vt = `view-transition-name: t-${post.n}`;
   // Generated artwork sits under the post's own image, so a broken image falls back to it.
-  const art = `<div class="card-art card-art-gen" aria-hidden="true" style="--h:${ART_HUES[post.n % ART_HUES.length]}"><span>${esc((post.title.match(/[\p{L}\p{N}]/u) || [post.title[0] || ''])[0])}</span>${post.image ? `<img src="${esc(post.image)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</div>`;
+  const cover = post.cover || post.image;
+  const art = `<div class="card-art card-art-gen" aria-hidden="true" style="--h:${ART_HUES[post.n % ART_HUES.length]};view-transition-name: a-${post.n}"><span>${esc((post.title.match(/[\p{L}\p{N}]/u) || [post.title[0] || ''])[0])}</span>${cover ? `<img src="${post.cover ? A(ctx, post.cover) : esc(post.image)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</div>`;
   return `<article class="card glass tilt reveal${opts.big ? ' card-big' : ''}${opts.wide ? ' card-wide' : ''}" style="--i:${i % 12}">
     <a class="card-link" href="${L(ctx, postPath(post))}" aria-label="${esc(post.title)}"></a>
     ${art}
@@ -272,6 +273,7 @@ export function postView(site, post, content, ctx, now = new Date()) {
     <article class="article">
       <header class="article-head reveal">
         <a class="back" href="${L(ctx, '/')}" data-back>${icon('arrowLeft')}全部文章</a>
+        ${post.cover ? `<div class="article-cover" style="view-transition-name: a-${post.n}"><img src="${A(ctx, post.cover)}" alt="" decoding="async"></div>` : ''}
         <div class="article-kicker">
           ${post.category ? `<a class="chip chip-accent" href="${L(ctx, `/?category_id=${post.category.id}`)}">${icon('folder')}${esc(post.category.name)}</a>` : ''}
           ${post.tags.map(t => tagChip(ctx, t)).join('')}
@@ -517,6 +519,7 @@ export function footerHTML(site, ctx) {
 export function backdropHTML() {
   return `<div class="backdrop" aria-hidden="true">
     <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+    <div class="gridlines"></div><div class="gridglow"></div><div class="scan"></div>
     <div class="spotlight"></div><div class="grain"></div>
   </div>`;
 }

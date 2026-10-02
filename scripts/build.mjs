@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { loadContent } from './lib/content.mjs';
 import { plainText } from './lib/markdown.mjs';
 import { atomFeed, sitemap, manifest, serviceWorker } from './lib/extras.mjs';
+import { coverSVG } from './lib/covers.mjs';
 import * as R from '../src/render.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -36,7 +37,10 @@ const write = (rel, body) => {
 
 // ---------- content ----------
 const content = loadContent(DATA);
-const posts = content.posts.map((p, n) => ({ ...p, n }));
+// Every post gets drawn cover art; scripts/covers.json says what to draw.
+const COVERS = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/covers.json'), 'utf8'));
+const coverPath = slug => `/covers/posts/${encodeURIComponent(slug)}.svg`;
+const posts = content.posts.map((p, n) => ({ ...p, n, cover: coverPath(p.slug) }));
 const since = posts.reduce((min, p) => (p.created && p.created < min ? p.created : min), posts[0]?.created || NOW.toISOString());
 const strip = ({ html, toc, ...meta }) => meta;
 const site = {
@@ -74,6 +78,8 @@ fs.mkdirSync(OUT, { recursive: true });
 fs.cpSync(path.join(ROOT, 'public'), OUT, { recursive: true });
 if (fs.existsSync(content.coversDir)) fs.cpSync(content.coversDir, path.join(OUT, 'covers'), { recursive: true });
 write(assets.js, bundle);
+const svgs = new Map(posts.map(p => [p.cover, coverSVG(p, COVERS[p.slug] || {})]));
+for (const p of posts) write(`covers/posts/${p.slug}.svg`, svgs.get(p.cover));
 write(assets.css, css);
 
 // ---------- documents ----------
@@ -113,7 +119,7 @@ function documentHTML(view, pathname, { inline = null } = {}) {
 <title>${e(view.title)}</title>
 <meta name="description" content="${e(view.description)}">
 <meta name="generator" content="goblog ${e(JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version)}">
-<meta name="theme-color" content="#eef0f6">
+<meta name="theme-color" content="#e7ecf2">
 ${inline ? '' : `<link rel="canonical" href="${e(url)}">`}
 <meta property="og:type" content="${view.article ? 'article' : 'website'}">
 <meta property="og:site_name" content="${e(site.config.name)}">
@@ -192,6 +198,7 @@ if (PREVIEW) {
   const mime = f => ({ '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.ico': 'image/x-icon' }[path.extname(f).toLowerCase()] || 'application/octet-stream');
   const dataURI = file => `data:${mime(file)};base64,${fs.readFileSync(file).toString('base64')}`;
   const inlineAssets = { '/logo.png': dataURI(path.join(ROOT, 'public/logo.png')) };
+  for (const [url, svg] of svgs) inlineAssets[url] = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
   for (const b of site.books) {
     const f = b.cover && path.join(DATA, b.cover);
     if (f && fs.existsSync(f)) inlineAssets[b.cover] = dataURI(f);
