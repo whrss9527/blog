@@ -10,6 +10,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { renderMarkdown, slugify, sanitizeHTML } from '../scripts/lib/markdown.mjs';
 import { cleanSlug, parseFrontMatter } from '../scripts/lib/content.mjs';
+import { atomFeed } from '../scripts/lib/extras.mjs';
 import { matchRoute, findPost, filterPosts, postPath } from '../src/render.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -122,6 +123,14 @@ test('build: feed ordered like the home page, at /feed.xml and /feed', () => {
   assert.doesNotMatch(feed, /(href|src)=&quot;\/(?!\/)/);
   assert.match(read('sitemap.xml'), /<loc>https:\/\/blog\.whrss\.com\/posts\/hello-world<\/loc>/);
   assert.match(read('robots.txt'), /Sitemap: https:\/\/blog\.whrss\.com\/sitemap\.xml/);
+});
+
+test('feed: a category and a tag with the same name are listed once', () => {
+  const site = { config: { host: 'https://blog.whrss.com', name: 'n', description: 'd', author: 'a' } };
+  const post = { slug: 'p', title: 't', description: 'd', html: '', created: '2026-10-02T02:00:00.000Z', category: { name: '折腾' }, tags: [{ name: '折腾' }, { name: 'blog' }] };
+  const feed = atomFeed(site, [post], new Date('2026-10-03T00:00:00Z'));
+  assert.equal(feed.match(/<category term="折腾"\/>/g).length, 1);
+  assert.match(feed, /<category term="blog"\/>/);
 });
 
 test('build: control characters pasted into a post stay out of the feed and the pages', () => {

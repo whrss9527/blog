@@ -10,6 +10,10 @@ const x = s => escapeHTML(stripControls(s));
 // "/covers/…" would point at the reader itself; give them the host.
 const absolute = (html, host) => html.replace(/(\s(?:href|src))="\/(?!\/)/g, `$1="${host}/`);
 
+// The category and the tags, each name once: a few posts have a tag named like
+// their category (折腾), which a reader would show twice.
+const terms = p => [...new Set([p.category?.name, ...p.tags.map(t => t.name)].filter(Boolean))];
+
 // Atom, ordered like the home page (pinned first, then newest first). The
 // profile README's "latest posts" sync reads the first entries in this order.
 export function atomFeed(site, posts, now) {
@@ -34,7 +38,7 @@ ${ordered.map(p => {
     <id>${x(url)}</id>
     <published>${x(p.created)}</published>
     <updated>${x(p.updated || p.created)}</updated>
-${p.category ? `    <category term="${x(p.category.name)}"/>\n` : ''}${p.tags.map(t => `    <category term="${x(t.name)}"/>\n`).join('')}    <summary>${x(p.description)}</summary>
+${terms(p).map(t => `    <category term="${x(t)}"/>\n`).join('')}    <summary>${x(p.description)}</summary>
     <content type="html">${x(absolute(p.html, host))}</content>
   </entry>`;
   }).join('\n')}
