@@ -1,7 +1,18 @@
 // Feed, sitemap, web app manifest and service worker: the files a server used
 // to generate on the fly, now written once per build.
-import { escapeHTML as x } from './markdown.mjs';
+import { escapeHTML, stripControls } from './markdown.mjs';
 import { postPath } from '../../src/render.js';
+
+// Posts are cleaned when they are read; this also covers names from the JSON files.
+const x = s => escapeHTML(stripControls(s));
+
+// A feed reader shows the content away from the site, where "/posts/…" or
+// "/covers/…" would point at the reader itself; give them the host.
+const absolute = (html, host) => html.replace(/(\s(?:href|src))="\/(?!\/)/g, `$1="${host}/`);
+
+// The category and the tags, each name once: a few posts have a tag named like
+// their category (折腾), which a reader would show twice.
+const terms = p => [...new Set([p.category?.name, ...p.tags.map(t => t.name)].filter(Boolean))];
 
 // Atom, ordered like the home page (pinned first, then newest first). The
 // profile README's "latest posts" sync reads the first entries in this order.
@@ -27,8 +38,8 @@ ${ordered.map(p => {
     <id>${x(url)}</id>
     <published>${x(p.created)}</published>
     <updated>${x(p.updated || p.created)}</updated>
-${p.category ? `    <category term="${x(p.category.name)}"/>\n` : ''}${p.tags.map(t => `    <category term="${x(t.name)}"/>\n`).join('')}    <summary>${x(p.description)}</summary>
-    <content type="html">${x(p.html)}</content>
+${terms(p).map(t => `    <category term="${x(t)}"/>\n`).join('')}    <summary>${x(p.description)}</summary>
+    <content type="html">${x(absolute(p.html, host))}</content>
   </entry>`;
   }).join('\n')}
 </feed>

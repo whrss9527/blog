@@ -10,6 +10,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { renderMarkdown, slugify, sanitizeHTML } from '../scripts/lib/markdown.mjs';
 import { cleanSlug, parseFrontMatter } from '../scripts/lib/content.mjs';
+import { atomFeed } from '../scripts/lib/extras.mjs';
 import { matchRoute, findPost, filterPosts, postPath } from '../src/render.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -116,8 +117,29 @@ test('build: feed ordered like the home page, at /feed.xml and /feed', () => {
   const links = [...feed.matchAll(/<entry>\s*<title>[^<]*<\/title>\s*<link href="([^"]+)"/g)].map(m => m[1]);
   assert.deepEqual(links, ['https://blog.whrss.com/posts/pinned', 'https://blog.whrss.com/posts/odd-name', 'https://blog.whrss.com/posts/hello-world']);
   assert.match(feed, /<published>2023-03-10T09:15:55.000Z<\/published>/);
+  // a feed reader shows the content away from the site, so links and images from the site root get the host
+  assert.match(feed, /href=&quot;https:\/\/blog\.whrss\.com\/posts\/hello-world&quot;/);
+  assert.match(feed, /src=&quot;https:\/\/blog\.whrss\.com\/covers\/a\.jpg&quot;/);
+  assert.doesNotMatch(feed, /(href|src)=&quot;\/(?!\/)/);
   assert.match(read('sitemap.xml'), /<loc>https:\/\/blog\.whrss\.com\/posts\/hello-world<\/loc>/);
   assert.match(read('robots.txt'), /Sitemap: https:\/\/blog\.whrss\.com\/sitemap\.xml/);
+});
+
+test('feed: a category and a tag with the same name are listed once', () => {
+  const site = { config: { host: 'https://blog.whrss.com', name: 'n', description: 'd', author: 'a' } };
+  const post = { slug: 'p', title: 't', description: 'd', html: '', created: '2026-10-02T02:00:00.000Z', category: { name: '折腾' }, tags: [{ name: '折腾' }, { name: 'blog' }] };
+  const feed = atomFeed(site, [post], new Date('2026-10-03T00:00:00Z'));
+  assert.equal(feed.match(/<category term="折腾"\/>/g).length, 1);
+  assert.match(feed, /<category term="blog"\/>/);
+});
+
+test('build: control characters pasted into a post stay out of the feed and the pages', () => {
+  // hello-world.md has a stray backspace (\x08) before its heading and a paragraph, like a post
+  // pasted into editor.md; XML forbids it, and one of them made the whole feed unreadable
+  for (const f of ['feed.xml', 'sitemap.xml', 'posts/hello-world.html', 'data/posts/hello-world.json', 'data/search.json']) {
+    assert.doesNotMatch(read(f), /[\x00-\x08\x0B\x0C\x0E-\x1F]/, f);
+  }
+  assert.match(read('feed.xml'), /&lt;h2 id=&quot;开始-start&quot;&gt;/);
 });
 
 test('build: nothing private reaches the site', () => {

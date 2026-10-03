@@ -11,3 +11,5 @@ word_count: 30
 ---
 
 <script>alert(1)</script><b onclick="x()">hi</b> [x](javascript:alert(1))
+
+[上一篇](/posts/hello-world) ![图](/covers/a.jpg)
