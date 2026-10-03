@@ -116,6 +116,10 @@ test('build: feed ordered like the home page, at /feed.xml and /feed', () => {
   const links = [...feed.matchAll(/<entry>\s*<title>[^<]*<\/title>\s*<link href="([^"]+)"/g)].map(m => m[1]);
   assert.deepEqual(links, ['https://blog.whrss.com/posts/pinned', 'https://blog.whrss.com/posts/odd-name', 'https://blog.whrss.com/posts/hello-world']);
   assert.match(feed, /<published>2023-03-10T09:15:55.000Z<\/published>/);
+  // a feed reader shows the content away from the site, so links and images from the site root get the host
+  assert.match(feed, /href=&quot;https:\/\/blog\.whrss\.com\/posts\/hello-world&quot;/);
+  assert.match(feed, /src=&quot;https:\/\/blog\.whrss\.com\/covers\/a\.jpg&quot;/);
+  assert.doesNotMatch(feed, /(href|src)=&quot;\/(?!\/)/);
   assert.match(read('sitemap.xml'), /<loc>https:\/\/blog\.whrss\.com\/posts\/hello-world<\/loc>/);
   assert.match(read('robots.txt'), /Sitemap: https:\/\/blog\.whrss\.com\/sitemap\.xml/);
 });
