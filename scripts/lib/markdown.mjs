@@ -24,6 +24,11 @@ const FA_EMOJI = {
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 export const escapeHTML = s => String(s ?? '').replace(/[&<>"']/g, c => ESCAPES[c]);
 
+// Characters XML 1.0 forbids (tab and line breaks aside). Text pasted into the old
+// editor.md sometimes brought one along (a backspace), invisible on the page but
+// enough to make the whole Atom feed unreadable.
+export const stripControls = s => String(s ?? '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\uFFFE\uFFFF]/g, '');
+
 export function decodeEntities(s) {
   return String(s)
     .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))

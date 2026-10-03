@@ -120,6 +120,15 @@ test('build: feed ordered like the home page, at /feed.xml and /feed', () => {
   assert.match(read('robots.txt'), /Sitemap: https:\/\/blog\.whrss\.com\/sitemap\.xml/);
 });
 
+test('build: control characters pasted into a post stay out of the feed and the pages', () => {
+  // hello-world.md has a stray backspace (\x08) before its heading and a paragraph, like a post
+  // pasted into editor.md; XML forbids it, and one of them made the whole feed unreadable
+  for (const f of ['feed.xml', 'sitemap.xml', 'posts/hello-world.html', 'data/posts/hello-world.json', 'data/search.json']) {
+    assert.doesNotMatch(read(f), /[\x00-\x08\x0B\x0C\x0E-\x1F]/, f);
+  }
+  assert.match(read('feed.xml'), /&lt;h2 id=&quot;开始-start&quot;&gt;/);
+});
+
 test('build: nothing private reaches the site', () => {
   const all = fs.readdirSync(OUT, { recursive: true }).filter(f => fs.statSync(path.join(OUT, f)).isFile());
   assert.ok(!all.some(f => /users\.json$/.test(f)));

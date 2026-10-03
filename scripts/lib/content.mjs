@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
-import { renderMarkdown, plainText } from './markdown.mjs';
+import { renderMarkdown, plainText, stripControls } from './markdown.mjs';
 
 const FRONT_MATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 
@@ -19,6 +19,8 @@ export function parseFrontMatter(source) {
 export function cleanSlug(identity) {
   return identity.trim().replace(/[\s?#%"'<>\\]+/g, '-').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
 }
+
+const readSource = file => stripControls(fs.readFileSync(file, 'utf8'));
 
 function readJSON(file, fallback) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
@@ -51,7 +53,7 @@ export function loadContent(dataDir) {
   for (const file of fs.readdirSync(path.join(dataDir, 'posts')).sort()) {
     if (!file.endsWith('.md')) continue;
     const identity = file.slice(0, -3);
-    const { data, body } = parseFrontMatter(fs.readFileSync(path.join(dataDir, 'posts', file), 'utf8'));
+    const { data, body } = parseFrontMatter(readSource(path.join(dataDir, 'posts', file)));
     if (Number(data.status ?? 1) !== 1) continue; // drafts and hidden posts stay out of the site
     const { html, toc } = renderMarkdown(body);
     const category = categoryById.get(Number(data.category_id));
@@ -82,7 +84,7 @@ export function loadContent(dataDir) {
   if (fs.existsSync(pagesDir)) {
     for (const file of fs.readdirSync(pagesDir).sort()) {
       if (!file.endsWith('.md')) continue;
-      const { data, body } = parseFrontMatter(fs.readFileSync(path.join(pagesDir, file), 'utf8'));
+      const { data, body } = parseFrontMatter(readSource(path.join(pagesDir, file)));
       const id = cleanSlug(String(data.id ?? file.slice(0, -3)));
       const { html, toc } = renderMarkdown(body);
       pages.push({ id, title: String(data.title ?? id).trim(), html, toc });

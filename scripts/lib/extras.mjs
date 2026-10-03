@@ -1,7 +1,10 @@
 // Feed, sitemap, web app manifest and service worker: the files a server used
 // to generate on the fly, now written once per build.
-import { escapeHTML as x } from './markdown.mjs';
+import { escapeHTML, stripControls } from './markdown.mjs';
 import { postPath } from '../../src/render.js';
+
+// Posts are cleaned when they are read; this also covers names from the JSON files.
+const x = s => escapeHTML(stripControls(s));
 
 // Atom, ordered like the home page (pinned first, then newest first). The
 // profile README's "latest posts" sync reads the first entries in this order.
